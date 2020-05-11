@@ -22,6 +22,9 @@
 					<form role="form" action="/board/modify" method="post">
 						<input type="hidden" name="pageNum" value='<c:out value="${cri.pageNum}"/>'>
 						<input type="hidden" name="amount" value='<c:out value="${cri.amount}"/>'>
+						<input type="hidden" name="type" value='<c:out value="${cri.type }"/>'>
+						<input type="hidden" name="keyword" value='<c:out value="${cri.keyword}"/>'>
+						
 						<div class="form-group">
 							<label>Bno</label>
 							<input class="form-control" name="bno" 
@@ -104,10 +107,14 @@
 				formObj.attr("action","/board/list").attr("method","get");
 				var pageNumTag = $("input[name='pageNum']").clone();	//List버튼을 클릭한다면 <form> 태그에서 필요한 부분만 잠시 복사(clone)해 보관해두고
 				var amountTag = $("input[name='amount']").clone();		//<form>태그 내의 모든 내용은 지워버린다(empty) 
+				var keywordTag = $("input[name='keyword']").clone();
+				var typeTag = $("input[name='type']").clone();
 				
 				formObj.empty();
 				formObj.append(pageNumTag);		//다시필요한 태그만 추가해서 name값으로 list에 get방식으로 /board/list를 호출한다
 				formObj.append(amountTag);
+				formObj.append(keywordTag);
+				formObj.append(typeTag);
 				
 				/* self.location = "/board/list";
 				return; */
