@@ -2,6 +2,7 @@
 	pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec"%>
 <style>
 .uploadResult {
   width:100%;
@@ -88,7 +89,17 @@
 						readonly="readonly">
 					</div>
 					
-					<button data-oper="modify" class="btn btn-default">Modify</button>
+					
+					<sec:authentication property="principal" var="pinfo"/>
+					<sec:authorize access="isAuthenticated()">
+						
+						<c:if test="${pinfo.username eq board.writer}">
+							
+							<button data-oper="modify" class="btn btn-default">Modify</button>
+							
+						</c:if>
+					</sec:authorize>
+					
 					<button data-oper="list" class="btn btn-info">List</button>
 					
 					<form id="operForm" action="/board/modify" method="get">
@@ -98,6 +109,7 @@
 						<input type="hidden" name="type" value='<c:out value="${cri.type }"/>'>
 						<input type="hidden" name="keyword" value='<c:out value="${cri.keyword}"/>'>
 					</form>
+					
 			</div>
 			<!-- /.table-responsive -->
 		</div>
@@ -137,7 +149,9 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<i class="fa fa-comments fa-fw"></i> Reply
-				<button id='addReplyBtn' class="btn btn-primary btn-xs pull-right">New Reply</button>
+				<sec:authorize access="isAuthenticated()">
+					<button id='addReplyBtn' class="btn btn-primary btn-xs pull-right">New Reply</button>
+				</sec:authorize>
 			</div>
 			<!-- /.panel heading -->
 			
@@ -177,7 +191,7 @@
 				</div>
 				<div class="form-group">
 					<label>Replyer</label>
-					<input class="form-control" name="replyer" value="replyer">
+					<input class="form-control" name="replyer" value="replyer" readonly="readonly">
 				</div>
 				<div class="form-group">
 					<label>Reply Date</label>
@@ -293,96 +307,6 @@
 			});//end function
 		}	//end showList
 		
-		var modal = $(".modal");
-		var modalInputReply = modal.find("input[name='reply']");
-		var modalInputReplyer = modal.find("input[name='replyer']");
-		var modalInputReplyDate = modal.find("input[name='replyDate']");
-		
-		var modalModBtn = $("#modalModBtn");
-		var modalRemoveBtn = $("#modalRemoveBtn");
-		var modalRegisterBtn = $("#modalRegisterBtn");
-		
-		$("#addReplyBtn").on("click",function(e){
-			
-			modal.find("input").val("");
-			modalInputReplyDate.closest("div").hide();
-			modal.find("button[id !='modalCloseBtn']").hide();
-			
-			modalRegisterBtn.show();
-			
-			$(".modal").modal("show");
-		});
-		
-		modalRegisterBtn.on("click",function(e){
-			
-			var reply = {
-					reply : modalInputReply.val(),
-					replyer : modalInputReplyer.val(),
-					bno : bnoValue
-			};
-			
-			replyService.add(reply, function(result) {
-				
-				alert(result);	//등록 성공
-				
-				modal.find("input").val("");	//입력 항목 비우기
-				modal.modal("hide");	//모달창 닫기
-				
-				//showList(1);	//댓글이 추가된 후 그 사이에 추가되었을지 모르는 새로운 댓글들을 가져온다.
-				showList(-1);	//등록 후 최신 목록 호출
-			
-			});
-		
-			
-		});
-		
-		$(".chat").on("click","li",function(e){
-			
-			var rno = $(this).data("rno");
-			
-			replyService.get(rno, function(reply){
-				
-				modalInputReply.val(reply.reply);
-				modalInputReplyer.val(reply.replyer);
-				modalInputReplyDate.val(replyService.displayTime(reply.replyDate)).attr("readonly","readonly");
-				modal.data("rno",reply.rno);
-				
-				modal.find("button[id != 'modalCloseBtn']").hide();
-				modalModBtn.show();
-				modalRemoveBtn.show();
-				
-				
-				$(".modal").modal("show");
-			});
-			console.log(rno);
-		});
-		//jQuery에서 이벤트를 위임하는 방식은 이미 존재하는 DOM 요소에 이벤트를 처리하고 나중에 동적으로 생기는 요소들에 대해서 파라미터 형식으로 지정
-		//<ul>태그의 클래스 'chat'을 이용해서 이벤트를 걸고 실제 이벤트의 대상은 <li> 태그가 되도록 한다.이벤트를 <ul>에 걸었지만, 각 댓글이 이벤트의 this가 된다.
-		
-		modalModBtn.on("click",function(e){
-			
-			var reply = {rno:modal.data("rno"), reply:modalInputReply.val()};
-			
-			replyService.update(reply,function(result){
-				
-				alert(result);
-				modal.modal("hide");
-				showList(pageNum);
-				
-			});
-		});
-		
-		modalRemoveBtn.on("click",function(e){
-			
-			var rno = modal.data("rno");
-			
-			replyService.remove(rno, function(result){
-				
-				alert(result);
-				modal.modal("hide");
-				showList(pageNum);
-			});
-		});
 		
 		var pageNum = 1;
 		var replyPageFooter = $(".panel-footer");
@@ -440,7 +364,211 @@
 			
 			showList(pageNum);
 		});
-	});
+		
+		
+		var modal = $(".modal");
+		var modalInputReply = modal.find("input[name='reply']");
+		var modalInputReplyer = modal.find("input[name='replyer']");
+		var modalInputReplyDate = modal.find("input[name='replyDate']");
+		
+		var modalModBtn = $("#modalModBtn");
+		var modalRemoveBtn = $("#modalRemoveBtn");
+		var modalRegisterBtn = $("#modalRegisterBtn");
+		
+		
+		
+		$("#addReplyBtn").on("click",function(e){
+			
+			modal.find("input").val("");
+			modal.find("input[name='replyer']").val(replyer);
+			modalInputReplyDate.closest("div").hide();
+			modal.find("button[id !='modalCloseBtn']").hide();
+			
+			modalRegisterBtn.show();
+			
+			$(".modal").modal("show");
+		});
+		
+		//Ajax spring security header...
+		$(document).ajaxSend(function(e, xhr, options) {
+			xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+		});		
+		
+		modalRegisterBtn.on("click",function(e){
+			
+			var reply = {
+					reply : modalInputReply.val(),
+					replyer : modalInputReplyer.val(),
+					bno : bnoValue
+			};
+			
+			replyService.add(reply, function(result) {
+				
+				alert(result);	//등록 성공
+				
+				modal.find("input").val("");	//입력 항목 비우기
+				modal.modal("hide");	//모달창 닫기
+				
+				//showList(1);	//댓글이 추가된 후 그 사이에 추가되었을지 모르는 새로운 댓글들을 가져온다.
+				showList(-1);	//등록 후 최신 목록 호출
+			
+			});
+			
+		});
+		
+		$(".chat").on("click", "li", function(e){
+		      
+		      var rno = $(this).data("rno");
+		      
+		      replyService.get(rno, function(reply){
+		      
+		        modalInputReply.val(reply.reply);
+		        modalInputReplyer.val(reply.replyer);
+		        modalInputReplyDate.val(replyService.displayTime( reply.replyDate))
+		        .attr("readonly","readonly");
+		        modal.data("rno", reply.rno);
+		        
+		        modal.find("button[id !='modalCloseBtn']").hide();
+		        modalModBtn.show();
+		        modalRemoveBtn.show();
+		        
+		        $(".modal").modal("show");
+		            
+		      });
+		    });
+		  
+		    
+		/*     modalModBtn.on("click", function(e){
+		      
+		      var reply = {rno:modal.data("rno"), reply: modalInputReply.val()};
+		      
+		      replyService.update(reply, function(result){
+		            
+		        alert(result);
+		        modal.modal("hide");
+		        showList(1);
+		        
+		      });
+		      
+		    });
+
+		    modalRemoveBtn.on("click", function (e){
+		    	  
+		  	  var rno = modal.data("rno");
+		  	  
+		  	  replyService.remove(rno, function(result){
+		  	        
+		  	      alert(result);
+		  	      modal.modal("hide");
+		  	      showList(1);
+		  	      
+		  	  });
+		  	  
+		  	}); */
+
+		    modalModBtn.on("click", function(e){
+			  
+		      var originalReplyer = modalInputReplyer.val();			    	  
+		    	
+		   	  var reply = {rno:modal.data("rno"),
+		   			  	   reply: modalInputReply.val(),
+		   			  	   replyer: originalReplyer};
+		   	  
+		   	  if(!replyer){
+		 		  alert("로그인후 수정이 가능합니다.");
+		 		  modal.modal("hide");
+		 		  return;
+		 	  }
+		 	  
+		 	  console.log("Original Replyer: " + originalReplyer);
+		 	  
+		 	  if(replyer  != originalReplyer){
+		 		  
+		 		  alert("자신이 작성한 댓글만 수정이 가능합니다.");
+		 		  modal.modal("hide");
+		 		  return;
+		 		  
+		 	  }
+		   	  
+		   	  replyService.update(reply, function(result){
+		   	        
+		   	    alert(result);
+		   	    modal.modal("hide");
+		   	    showList(pageNum);
+		   	    
+		   	  });
+		   	  
+		   	});
+
+		/* 
+		   	modalRemoveBtn.on("click", function (e){
+		   	  
+		   	  var rno = modal.data("rno");
+		   	  
+		   	  replyService.remove(rno, function(result){
+		   	        
+		   	      alert(result);
+		   	      modal.modal("hide");
+		   	      showList(pageNum);
+		   	      
+		   	  });
+		   	  
+		   	}); */
+
+		   	
+		   	
+		   	
+		   	modalRemoveBtn.on("click", function (e){
+		   	  
+		   	  var rno = modal.data("rno");
+
+		   	  console.log("RNO: " + rno);
+		   	  console.log("REPLYER: " + replyer);
+		   	  
+		   	  if(!replyer){
+		   		  alert("로그인후 삭제가 가능합니다.");
+		   		  modal.modal("hide");
+		   		  return;
+		   	  }
+		   	  
+		   	  var originalReplyer = modalInputReplyer.val();
+		   	  
+		   	  console.log("Original Replyer: " + originalReplyer);
+		   	  
+		   	  if(replyer  != originalReplyer){
+		   		  
+		   		  alert("자신이 작성한 댓글만 삭제가 가능합니다.");
+		   		  modal.modal("hide");
+		   		  return;
+		   		  
+		   	  }
+		   	  
+		   	  
+		   	  replyService.remove(rno, originalReplyer, function(result){
+		   	        
+		   	      alert(result);
+		   	      modal.modal("hide");
+		   	      showList(pageNum);
+		   	      
+		   	  });
+		   	  
+		   	});
+
+		   	
+		    var replyer = null;
+		    
+		    <sec:authorize access="isAuthenticated()">
+		    
+		    replyer = '<sec:authentication property="principal.username"/>';   
+		    
+		</sec:authorize>
+		 
+		    var csrfHeaderName ="${_csrf.headerName}"; 
+		    var csrfTokenValue="${_csrf.token}";
+
+
+		 
+		});
 </script>
 
 <script type="text/javascript">

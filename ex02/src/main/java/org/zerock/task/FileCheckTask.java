@@ -57,37 +57,37 @@ public class FileCheckTask {
 	@Scheduled(cron = "0 0 2 * * *")	
 	public void checkFiles() throws Exception{	//checkFiles()는 매일 새벽2시에 동작한다.
 		
-		log.warn("File Check Task run..............");
+		log.warn("File Check Task run.................");
 		log.warn(new Date());
-		//file list in database
-		List<BoardAttachVO> fileList = attachMapper.getOldFiles();	//attachMapper를 이용해서 어제 날짜로 보관되는 모든 첨부파일의 목록을 가져온다.
+		// file list in database
+		List<BoardAttachVO> fileList = attachMapper.getOldFiles();
 		
-		//ready for check file in directory with database file list
-		List<Path> fileListPaths = fileList.stream()				//가져온 파일 목록은 BoardAttachVO 타입의 객체이므로, 나중에 비교를 위해서 java.nio.Paths의 목록으로 변환
-								   .map(vo -> Paths.get("C:\\upload",vo.getUploadPath(),vo.getUuid()+"_"+vo.getFileName()))
-								   .collect(Collectors.toList());
-		
-		//image file has thumbnail file
+		// ready for check file in directory with database file list
+		List<Path> fileListPaths = fileList.stream()
+				.map(vo -> Paths.get("C:\\upload", vo.getUploadPath(), vo.getUuid() + "_" + vo.getFileName()))
+				.collect(Collectors.toList());
+
+		// image file has thumnail file
 		fileList.stream().filter(vo -> vo.isFileType() == true)
-		.map(vo -> Paths.get("C:\\upload", vo.getUploadPath(), "s_" + vo.getUuid() + "_" + vo.getFileName()))
-		.forEach(p -> fileListPaths.add(p));
-		
-		log.warn("=========================================================");
-		
+				.map(vo -> Paths.get("C:\\upload", vo.getUploadPath(), "s_" + vo.getUuid() + "_" + vo.getFileName()))
+				.forEach(p -> fileListPaths.add(p));
+
+		log.warn("===========================================");
+
 		fileListPaths.forEach(p -> log.warn(p));
-		
-		//file in yesterday directory
-		File targetDir = Paths.get("C:\\upload",getFolderYesterDay()).toFile();
-		
+
+		// files in yesterday directory
+		File targetDir = Paths.get("C:\\upload", getFolderYesterDay()).toFile();
+
 		File[] removeFiles = targetDir.listFiles(file -> fileListPaths.contains(file.toPath()) == false);
-		
-		log.warn("=========================================================");
-		
-		for(File file : removeFiles) {
-			
+
+		log.warn("-----------------------------------------");
+		for (File file : removeFiles) {
+
 			log.warn(file.getAbsolutePath());
-			
+
 			file.delete();
+
 		}
 	}
 }

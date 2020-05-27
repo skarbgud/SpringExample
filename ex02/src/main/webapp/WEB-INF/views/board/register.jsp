@@ -2,6 +2,7 @@
 	pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec"%>
 
 <%@include file="../include/header.jsp"%>
 <style type="text/css">
@@ -84,9 +85,9 @@
 					
 					<div class="form-group">
 						<label>Writer</label>
-						<input class="form-control" name="writer" >
+						<input class="form-control" name="writer" value='<sec:authentication property="principal.username"/>' readonly="readonly">
 					</div>
-					
+					<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
 					<button type="submit" class="btn btn-default">Submit Button</button>
 					<button type="reset" class="btn btn-default">Reset Button</button>
 					
@@ -180,6 +181,9 @@
 		return true;
 	}
 	
+	var csrfHeaderName = "${_csrf.headerName}";	//csrfHeaderName과 csrfTokenValue 변수를 추가
+	var csrfTokenValue = "${_csrf.token}";		//CSRF 토큰의 값은 세션이 달라질 때 마다 변한다.
+												
 	$("input[type='file']").change(function(e) {
 		
 		var formData = new FormData();
@@ -201,6 +205,9 @@
 			url: '/uploadAjaxAction',
 			processData: false,
 			contentType: false,
+			beforeSend: function(xhr){	//Ajax로 데이터를 전송할 때에는 beforeSend를 이용해서 추가적인 헤더를 지정해서 전송한다.
+				xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+			},
 			data: formData,
 			type: 'POST',
 			dataType: 'json',
@@ -265,6 +272,9 @@
 		$.ajax({
 			url: '/deleteFile',
 			data: {fileName: targetFile, type: type},
+			beforeSend : function(xhr){
+				xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+			},
 			dataType: 'text',
 			type: 'POST',
 			success: function(result){

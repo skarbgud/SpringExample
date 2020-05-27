@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,11 +58,13 @@ public class BoardController {
 	}
 	
 	@GetMapping("/register")
+	@PreAuthorize("isAuthenticated()")	//@PreAuthorize를 이용할 때의 표현식은 isAuthenticated()로 어떠한 사용자든 로그인이 성공한 사용자만이 해당 기능을 사용할 수 있도록 처리
 	public void register() {
 		
 	}
 	
 	@PostMapping("/register")
+	@PreAuthorize("isAuthenticated()")
 	public String register(BoardVO board, RedirectAttributes rttr) {
 		
 		log.info("=================================");
@@ -92,6 +95,7 @@ public class BoardController {
 		model.addAttribute("board",service.get(bno));
 	}
 	
+	@PreAuthorize("principal.username == #board.writer")
 	@PostMapping("/modify")
 	public String modify(BoardVO board,@ModelAttribute("cri")Criteria cri, RedirectAttributes rttr) {
 		log.info("modify"+board);
@@ -105,8 +109,9 @@ public class BoardController {
 		return "redirect:/board/list"+cri.getListLink();
 	}
 	
+	@PreAuthorize("principal.username == #writer")	//기존과 달라진 부분은 파라미터로 writer가 추가된 부분과 해당 파라미터를 @PreAuthorize에서 '#writer'를 이용해서 체크한 부분이다.
 	@PostMapping("/remove")
-	public String remove(@RequestParam("bno")Long bno,@ModelAttribute("cri")Criteria cri, RedirectAttributes rttr) {
+	public String remove(@RequestParam("bno")Long bno,@ModelAttribute("cri")Criteria cri, RedirectAttributes rttr,String writer) {
 		
 		log.info("remove..."+bno);
 		

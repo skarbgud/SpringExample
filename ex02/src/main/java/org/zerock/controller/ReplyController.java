@@ -3,6 +3,7 @@ package org.zerock.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +30,7 @@ public class ReplyController {
 	
 	//REST방식으로 처리할 때 주의해야 하는 점은 브라우저나 외부에서 서버를 호출할 때 데이터의 포맷과 서버에서 보내주는 데이터의 타입을 명확히 설계해야 하는 것이다.
 	//예를 들어 댓글 등록의 경우 브라우저에서는 JSOJ타입으로 된 댓글 데이터를 전송하고, 서버에서는 댓글의 처리 결과가 정상적으로 되었는지 문자열로 결과를 알려주도록 한다.
-	
+	@PreAuthorize("isAuthenticated()")
 	@PostMapping(value = "/new",			//create는 @PostMapping으로 POST방식으로만 동작하도록 설계하고, consumes와 produces를 이용해서 JSON방식의 데이터만 처리하도록 하고, 문자열을 반환하도록 설계
 			consumes = "application/json",	
 			produces = { MediaType.TEXT_PLAIN_VALUE })
@@ -76,24 +77,27 @@ public class ReplyController {
 	}
 	
 	//삭제
-	@DeleteMapping(value = "/{rno}" ,produces = {MediaType.TEXT_PLAIN_VALUE })
-	public ResponseEntity<String> remove(@PathVariable("rno")Long rno){
+	@PreAuthorize("principal.username == #vo.replyer")
+	@DeleteMapping(value = "/{rno}")
+	public ResponseEntity<String> remove(@RequestBody ReplyVO vo,
+			@PathVariable("rno") Long rno){
 		
 		log.info("remove: "+ rno);
 		
+		log.info("replyer: "+vo.getReplyer());
+	
 		return service.remove(rno) == 1? new ResponseEntity<>("success",HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	
 	//수정
+	@PreAuthorize("principal.username == #vo.replyer")
 	@RequestMapping(method = {RequestMethod.PUT, RequestMethod.PATCH },
 			value = "/{rno}",
-			consumes = "application/json",
-			produces = {MediaType.TEXT_PLAIN_VALUE})
+			consumes = "application/json")
 	public ResponseEntity<String> modify(
 						@RequestBody ReplyVO vo,
 						@PathVariable("rno") Long rno){
 		
-		vo.setRno(rno);
 		
 		log.info("rno: "+rno);
 		
